@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PetVerse — Community for Fur Parents</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-logo">
+        <span class="logo-icon">🐾</span>
+        <span class="logo-text">PetVerse</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#home" class="nav-link active">Home</a></li>
+        <li><a href="#pets" class="nav-link">Pets</a></li>
+        <li><a href="#feed" class="nav-link">Feed</a></li>
+        <li><a href="#events" class="nav-link">Events</a></li>
+      </ul>
+      <button class="btn-join" onclick="showJoinModal()">Join Community</button>
+    </div>
+  </nav>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <div class="hero-badge">🐾 #1 Fur Parent Community</div>
+      <h1 class="hero-title">
+        A Place For You<br />
+        <span class="gradient-text">And Your Pet</span>
+      </h1>
+      <p class="hero-desc">
+        Share your pet's moments, find events near you, and connect with people
+        who get it — because loving your pet is never too much.
+      </p>
+      <div class="hero-buttons">
+        <button class="btn-primary" onclick="scrollToSection('pets')">Meet the Pets</button>
+        <button class="btn-secondary" onclick="scrollToSection('feed')">See the Feed</button>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="pet-bubbles" id="petBubbles"></div>
+    </div>
+  </section>
+
+  <!-- ===== STATS ===== -->
+  <section class="stats-section">
+    <div class="stats-container" id="statsContainer"></div>
+  </section>
+
+  <!-- ===== FEATURED PETS ===== -->
+  <section class="section" id="pets">
+    <div class="section-header">
+      <h2 class="section-title">Community Pets</h2>
+      <p class="section-subtitle">Meet the fur babies behind every story here on PetVerse</p>
+      <div class="filter-buttons" id="filterButtons"></div>
+    </div>
+    <div class="pets-grid" id="petsGrid">
+      <div class="loading">Loading pets... 🐾</div>
+    </div>
+  </section>
+
+  <!-- ===== COMMUNITY FEED ===== -->
+  <section class="feed-section" id="feed">
+    <div class="section-header">
+      <h2 class="section-title">Community Feed</h2>
+      <p class="section-subtitle">Real moments from real fur parents</p>
+    </div>
+    <div class="feed-container" id="feedContainer"></div>
+  </section>
+
+  <!-- ===== EVENTS ===== -->
+  <section class="section" id="events">
+    <div class="section-header">
+      <h2 class="section-title">Upcoming Events</h2>
+      <p class="section-subtitle">Fun things to do with your pet — don't miss out</p>
+    </div>
+    <div class="events-grid" id="eventsGrid"></div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span>🐾</span>
+          <span>PetVerse</span>
+        </div>
+        <p>The home of fur parents everywhere.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="#pets">Meet Pets</a></li>
+          <li><a href="#feed">Feed</a></li>
+          <li><a href="#events">Events</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">Contact Us</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 PetVerse. Made with love for fur parents everywhere.</p>
+    </div>
+  </footer>
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== JOIN MODAL ===== -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2>Join PetVerse! 🐾</h2>
+      <p>It's free, come on in</p>
+      <form class="join-form" id="joinForm">
+        <input type="text" placeholder="Your Name" class="form-input" required />
+        <input type="email" placeholder="Email Address" class="form-input" required />
+        <input type="text" placeholder="Your Pet's Name" class="form-input" required />
+        <select class="form-input">
+          <option value="">Select Pet Type</option>
+          <option value="dog">Dog 🐕</option>
+          <option value="cat">Cat 🐈</option>
+          <option value="rabbit">Rabbit 🐇</option>
+          <option value="bird">Bird 🦜</option>
+          <option value="other">Other 🐾</option>
+        </select>
+        <button type="submit" class="btn-primary" style="width:100%">Join Now!</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
