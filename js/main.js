@@ -8,12 +8,11 @@
 
 import { showToast, scrollToSection } from './utils.js';
 import {
-  sessionId,
   getStats, getMyState,
   getPets, followPet,
   getPosts, createPost, likePost, getComments, postComment,
   getEvents, joinEvent, getUserEvents, postUserEvent,
-  sendOTP, register, login, resetPassword, loginWithCode,
+  sendOTP, register, login, resetPassword,
   updateProfile, getUserTimeline
 } from './api.js';
 

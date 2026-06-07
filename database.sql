@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS members (
   name          VARCHAR(100) NOT NULL,
   email         VARCHAR(150) NOT NULL UNIQUE,
   password_hash VARCHAR(255),
+  facebook_id   VARCHAR(100) DEFAULT NULL,
+  google_id     VARCHAR(100) DEFAULT NULL,
   pet_name      VARCHAR(100) NOT NULL,
   pet_type      ENUM('dog','cat','rabbit','bird','other') NOT NULL,
   joined_at     DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -101,7 +103,7 @@ CREATE TABLE IF NOT EXISTS otps (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   email      VARCHAR(150) NOT NULL,
   code       VARCHAR(10)  NOT NULL,
-  type       ENUM('register','reset') NOT NULL,
+  type       ENUM('register','reset','login') NOT NULL,
   expires_at DATETIME     NOT NULL,
   used       TINYINT      DEFAULT 0
 );
