@@ -1,20 +1,6 @@
 // =====================================================
 // utils.js — ES Module: Reusable utility functions
-// Demonstrates: functions, export, Promise
 // =====================================================
-
-// Simulates fetching data from a server (Promise)
-export function loadData(data) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (data && data.length > 0) {
-        resolve(data);
-      } else {
-        reject('No data found.');
-      }
-    }, 600);
-  });
-}
 
 // Shows a toast notification at the bottom right
 export function showToast(message) {
