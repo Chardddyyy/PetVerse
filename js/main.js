@@ -211,7 +211,6 @@ function createPostCard(post, isLiked) {
       <button class="post-btn comment-btn">
         💬 <span class="comment-count">${comments}</span>
       </button>
-      <button class="post-btn share-btn">↗️ Share</button>
     </div>
     <div class="comment-section" style="display:none;">
       <div class="comment-list"></div>
@@ -305,15 +304,6 @@ function createPostCard(post, isLiked) {
 
   commentSubmit.addEventListener('click', submitComment);
   commentInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitComment(); });
-
-  // Share
-  card.querySelector('.share-btn').addEventListener('click', () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href).then(() => showToast('Link copied! 🔗'));
-    } else {
-      showToast('Share this with your friends! 🔗');
-    }
-  });
 
   return card;
 }
