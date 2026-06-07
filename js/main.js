@@ -28,6 +28,9 @@ let joinedIds     = [];
 let currentFilter = 'All';
 let currentUser   = loadCurrentUser();
 
+const POSTS_PER_PAGE = 5;
+let currentPage      = 1;
+
 const PET_EMOJI = { dog: '🐕', cat: '🐈', rabbit: '🐇', bird: '🦜', other: '🐾' };
 
 
@@ -316,9 +319,76 @@ function renderFeed() {
 
   if (isLoggedIn()) renderPostForm(container);
 
-  allPosts.forEach(post => {
+  if (allPosts.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'no-comments';
+    empty.style.textAlign = 'center';
+    empty.style.padding = '40px 0';
+    empty.textContent = 'No posts yet. Be the first to share! 🐾';
+    container.appendChild(empty);
+    return;
+  }
+
+  // Show only the current page's posts
+  const start     = (currentPage - 1) * POSTS_PER_PAGE;
+  const pagePosts = allPosts.slice(start, start + POSTS_PER_PAGE);
+
+  pagePosts.forEach(post => {
     container.appendChild(createPostCard(post, likedPostIds.includes(post.id)));
   });
+
+  renderPagination(container);
+}
+
+// ===== PAGINATION =====
+function renderPagination(container) {
+  const totalPages = Math.ceil(allPosts.length / POSTS_PER_PAGE);
+  if (totalPages <= 1) return;
+
+  const nav = document.createElement('div');
+  nav.className = 'pagination';
+
+  // Prev button
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'page-btn';
+  prevBtn.textContent = '← Prev';
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.addEventListener('click', () => {
+    currentPage--;
+    renderFeed();
+    scrollToSection('feed');
+  });
+
+  // Page number buttons
+  const nums = document.createElement('div');
+  nums.className = 'page-numbers';
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.className = `page-num ${i === currentPage ? 'active' : ''}`;
+    btn.textContent = i;
+    btn.addEventListener('click', () => {
+      currentPage = i;
+      renderFeed();
+      scrollToSection('feed');
+    });
+    nums.appendChild(btn);
+  }
+
+  // Next button
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'page-btn';
+  nextBtn.textContent = 'Next →';
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.addEventListener('click', () => {
+    currentPage++;
+    renderFeed();
+    scrollToSection('feed');
+  });
+
+  nav.appendChild(prevBtn);
+  nav.appendChild(nums);
+  nav.appendChild(nextBtn);
+  container.appendChild(nav);
 }
 
 
@@ -361,11 +431,9 @@ function renderPostForm(container) {
       });
       textarea.value = '';
       anonCheck.checked = false;
-      allPosts = [newPost, ...allPosts];
-
-      const card      = createPostCard(newPost, false);
-      const firstCard = container.querySelector('.post-card');
-      firstCard ? container.insertBefore(card, firstCard) : container.appendChild(card);
+      allPosts    = [newPost, ...allPosts];
+      currentPage = 1;  // go back to page 1 to see the new post
+      renderFeed();
       showToast(isAnon ? 'Posted anonymously! 🥷' : 'Post shared! 🐾');
     } catch {
       showToast('Could not post. Is the server running?');
@@ -874,6 +942,7 @@ function switchForgotToLogin(){ closeForgotModal();   showLoginModal(); }
 // ===== LOG OUT =====
 function logout() {
   currentUser = null;
+  currentPage = 1;
   localStorage.removeItem('pv_user');
   updateNavForUser();
   renderFeed();
@@ -886,6 +955,7 @@ function logout() {
 function onLoginSuccess(user) {
   currentUser = user;
   saveCurrentUser(user);
+  currentPage = 1;
   updateNavForUser();
   renderFeed();
   renderPostEventButton();

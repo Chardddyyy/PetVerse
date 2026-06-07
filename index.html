@@ -182,40 +182,39 @@
       </div>
 
       <form class="join-form" id="registerForm">
+
         <!-- Step 1: fill in details -->
         <div id="registerStep1">
-          <div class="form-row">
-            <input type="text"  id="reg-name"  placeholder="Your Name"     class="form-input" />
-            <input type="email" id="reg-email" placeholder="Email Address" class="form-input" />
-          </div>
-          <div class="form-row">
-            <input type="password" id="reg-password" placeholder="Password (min. 6)"  class="form-input" />
-            <input type="password" id="reg-confirm"  placeholder="Confirm Password"   class="form-input" />
-          </div>
-          <div class="form-row">
-            <input type="text" id="reg-petname" placeholder="Your Pet's Name" class="form-input" />
-            <select id="reg-pettype" class="form-input">
-              <option value="">Pet Type</option>
-              <option value="dog">Dog 🐕</option>
-              <option value="cat">Cat 🐈</option>
-              <option value="rabbit">Rabbit 🐇</option>
-              <option value="bird">Bird 🦜</option>
-              <option value="other">Other 🐾</option>
-            </select>
-          </div>
+          <input type="text"     id="reg-name"     placeholder="Your Name"                    class="form-input" />
+          <input type="email"    id="reg-email"     placeholder="Email Address"                class="form-input" />
+          <input type="password" id="reg-password"  placeholder="Password (minimum 6 characters)" class="form-input" />
+          <input type="password" id="reg-confirm"   placeholder="Confirm Password"             class="form-input" />
+          <input type="text"     id="reg-petname"   placeholder="Your Pet's Name"              class="form-input" />
+          <select id="reg-pettype" class="form-input">
+            <option value="">Select Pet Type</option>
+            <option value="dog">Dog 🐕</option>
+            <option value="cat">Cat 🐈</option>
+            <option value="rabbit">Rabbit 🐇</option>
+            <option value="bird">Bird 🦜</option>
+            <option value="other">Other 🐾</option>
+          </select>
           <p class="form-error" id="registerError"></p>
-          <button type="button" class="btn-primary btn-full" id="sendRegOtpBtn">Send Verification Code</button>
+          <button type="button" class="btn-primary btn-full" id="sendRegOtpBtn">
+            Send Verification Code to Email
+          </button>
+          <p class="form-hint">We'll send a 6-digit code to verify your email address.</p>
         </div>
 
         <!-- Step 2: enter OTP -->
         <div id="registerStep2" style="display:none;">
           <div id="regDevCode" class="dev-code-box" style="display:none;"></div>
-          <p class="otp-sent-msg">✅ Verification code sent to your email.</p>
+          <p class="otp-sent-msg">✅ Code sent! Check your email and enter it below.</p>
           <input type="text" id="reg-otp" placeholder="Enter 6-digit code" class="form-input otp-input" maxlength="6" />
           <p class="form-error" id="otpError"></p>
-          <button type="submit" class="btn-primary btn-full">Verify & Create Account</button>
-          <button type="button" class="btn-text" id="resendOtpBtn">Didn't get it? Resend code</button>
+          <button type="submit" class="btn-primary btn-full">Create My Account</button>
+          <button type="button" class="btn-text" id="resendOtpBtn">Didn't receive the code? Resend</button>
         </div>
+
       </form>
 
       <p class="modal-switch">Already have an account? <a href="#" onclick="switchToLogin()">Log in here</a></p>
