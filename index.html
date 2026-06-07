@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PetVerse — Community for Fur Parents</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>🐾</text></svg>">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,12 +17,13 @@
         <span class="logo-text">PetVerse</span>
       </div>
       <ul class="nav-links">
-        <li><a href="#home" class="nav-link active">Home</a></li>
-        <li><a href="#pets" class="nav-link">Pets</a></li>
-        <li><a href="#feed" class="nav-link">Feed</a></li>
+        <li><a href="#home"   class="nav-link active">Home</a></li>
+        <li><a href="#pets"   class="nav-link">Pets</a></li>
+        <li><a href="#feed"   class="nav-link">Feed</a></li>
         <li><a href="#events" class="nav-link">Events</a></li>
+        <li><a href="#donate" class="nav-link">Donate</a></li>
       </ul>
-      <button class="btn-join" onclick="showJoinModal()">Join Community</button>
+      <div class="nav-auth" id="navAuth"></div>
     </div>
   </nav>
 
@@ -38,7 +40,7 @@
         who get it — because loving your pet is never too much.
       </p>
       <div class="hero-buttons">
-        <button class="btn-primary" onclick="scrollToSection('pets')">Meet the Pets</button>
+        <button class="btn-primary"   onclick="scrollToSection('pets')">Meet the Pets</button>
         <button class="btn-secondary" onclick="scrollToSection('feed')">See the Feed</button>
       </div>
     </div>
@@ -52,7 +54,7 @@
     <div class="stats-container" id="statsContainer"></div>
   </section>
 
-  <!-- ===== FEATURED PETS ===== -->
+  <!-- ===== COMMUNITY PETS ===== -->
   <section class="section" id="pets">
     <div class="section-header">
       <h2 class="section-title">Community Pets</h2>
@@ -78,18 +80,51 @@
     <div class="section-header">
       <h2 class="section-title">Upcoming Events</h2>
       <p class="section-subtitle">Fun things to do with your pet — don't miss out</p>
+      <div id="postEventBtnArea"></div>
     </div>
     <div class="events-grid" id="eventsGrid"></div>
+  </section>
+
+  <!-- ===== DONATION ===== -->
+  <section class="section donation-section" id="donate">
+    <div class="section-header">
+      <h2 class="section-title">Help the Strays 🐕</h2>
+      <p class="section-subtitle">Every amount helps feed, vaccinate, and rescue stray animals in our community</p>
+    </div>
+    <div class="donation-card">
+      <div class="donation-left">
+        <h3>Donate via GCash</h3>
+        <p>Your donation goes directly to the strays — food, medicine, and rescue operations. No amount is too small. Salamat! 🙏</p>
+        <div class="gcash-box">
+          <div class="gcash-label">GCash Number</div>
+          <div class="gcash-number">09858337254</div>
+          <div class="gcash-name">Richard B</div>
+        </div>
+        <p class="donation-note">📸 After sending, post your GCash screenshot in our community feed so we can thank you personally!</p>
+      </div>
+      <div class="donation-right">
+        <div class="qr-box">
+          <img
+            src="images/GcashQR.jpeg"
+            alt="GCash QR Code of Richard B"
+            class="qr-img"
+            onerror="this.style.display='none'; document.getElementById('qrFallback').style.display='flex';"
+          />
+          <div class="qr-fallback" id="qrFallback">
+            <span class="qr-icon">📱</span>
+            <p>Scan QR to pay via GCash</p>
+            <small>Save your GCash QR as<br><strong>images/GcashQR.jpeg</strong></small>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ===== FOOTER ===== -->
   <footer class="footer">
     <div class="footer-container">
       <div class="footer-brand">
-        <div class="footer-logo">
-          <span>🐾</span>
-          <span>PetVerse</span>
-        </div>
+        <div class="footer-logo"><span>🐾</span><span>PetVerse</span></div>
         <p>The home of fur parents everywhere.</p>
       </div>
       <div class="footer-links">
@@ -98,14 +133,14 @@
           <li><a href="#pets">Meet Pets</a></li>
           <li><a href="#feed">Feed</a></li>
           <li><a href="#events">Events</a></li>
+          <li><a href="#donate">Donate</a></li>
         </ul>
       </div>
       <div class="footer-links">
         <h4>Support</h4>
         <ul>
-          <li><a href="#">Help Center</a></li>
-          <li><a href="#">Contact Us</a></li>
-          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="tel:09858337254">📞 09858337254</a></li>
+          <li><a href="#" onclick="showPrivacyModal()">Privacy Policy</a></li>
         </ul>
       </div>
     </div>
@@ -114,29 +149,197 @@
     </div>
   </footer>
 
-  <!-- ===== TOAST NOTIFICATION ===== -->
+  <!-- ===== TOAST ===== -->
   <div class="toast" id="toast"></div>
 
-  <!-- ===== JOIN MODAL ===== -->
-  <div class="modal-overlay" id="modalOverlay">
+  <!-- ===== LOGIN MODAL ===== -->
+  <div class="modal-overlay" id="loginOverlay">
+    <div class="modal login-modal">
+      <button class="modal-close" onclick="closeLoginModal()">✕</button>
+      <div class="modal-brand">
+        <span class="modal-brand-icon">🐾</span>
+        <h2>Welcome back!</h2>
+      </div>
+      <form class="join-form" id="loginForm">
+        <input type="email"    id="login-email"    placeholder="Email Address" class="form-input" />
+        <input type="password" id="login-password" placeholder="Password"      class="form-input" />
+        <a href="#" class="forgot-link" onclick="switchToForgot()">Forgot password?</a>
+        <p class="form-error" id="loginError"></p>
+        <button type="submit" class="btn-primary btn-full">Log In</button>
+      </form>
+      <p class="modal-switch">No account yet? <a href="#" onclick="switchToRegister()">Sign up free 🐾</a></p>
+    </div>
+  </div>
+
+  <!-- ===== REGISTER MODAL ===== -->
+  <div class="modal-overlay" id="registerOverlay">
     <div class="modal">
-      <button class="modal-close" onclick="closeModal()">✕</button>
-      <h2>Join PetVerse! 🐾</h2>
-      <p>It's free, come on in</p>
-      <form class="join-form" id="joinForm">
-        <input type="text" placeholder="Your Name" class="form-input" required />
-        <input type="email" placeholder="Email Address" class="form-input" required />
-        <input type="text" placeholder="Your Pet's Name" class="form-input" required />
-        <select class="form-input">
-          <option value="">Select Pet Type</option>
+      <button class="modal-close" onclick="closeRegisterModal()">✕</button>
+      <div class="modal-brand">
+        <span class="modal-brand-icon">🐾</span>
+        <h2>Join PetVerse!</h2>
+        <p id="registerDesc">Create your free account</p>
+      </div>
+
+      <form class="join-form" id="registerForm">
+        <!-- Step 1: fill in details -->
+        <div id="registerStep1">
+          <div class="form-row">
+            <input type="text"  id="reg-name"  placeholder="Your Name"     class="form-input" />
+            <input type="email" id="reg-email" placeholder="Email Address" class="form-input" />
+          </div>
+          <div class="form-row">
+            <input type="password" id="reg-password" placeholder="Password (min. 6)"  class="form-input" />
+            <input type="password" id="reg-confirm"  placeholder="Confirm Password"   class="form-input" />
+          </div>
+          <div class="form-row">
+            <input type="text" id="reg-petname" placeholder="Your Pet's Name" class="form-input" />
+            <select id="reg-pettype" class="form-input">
+              <option value="">Pet Type</option>
+              <option value="dog">Dog 🐕</option>
+              <option value="cat">Cat 🐈</option>
+              <option value="rabbit">Rabbit 🐇</option>
+              <option value="bird">Bird 🦜</option>
+              <option value="other">Other 🐾</option>
+            </select>
+          </div>
+          <p class="form-error" id="registerError"></p>
+          <button type="button" class="btn-primary btn-full" id="sendRegOtpBtn">Send Verification Code</button>
+        </div>
+
+        <!-- Step 2: enter OTP -->
+        <div id="registerStep2" style="display:none;">
+          <div id="regDevCode" class="dev-code-box" style="display:none;"></div>
+          <p class="otp-sent-msg">✅ Verification code sent to your email.</p>
+          <input type="text" id="reg-otp" placeholder="Enter 6-digit code" class="form-input otp-input" maxlength="6" />
+          <p class="form-error" id="otpError"></p>
+          <button type="submit" class="btn-primary btn-full">Verify & Create Account</button>
+          <button type="button" class="btn-text" id="resendOtpBtn">Didn't get it? Resend code</button>
+        </div>
+      </form>
+
+      <p class="modal-switch">Already have an account? <a href="#" onclick="switchToLogin()">Log in here</a></p>
+    </div>
+  </div>
+
+  <!-- ===== FORGOT PASSWORD MODAL ===== -->
+  <div class="modal-overlay" id="forgotOverlay">
+    <div class="modal">
+      <button class="modal-close" onclick="closeForgotModal()">✕</button>
+      <div class="modal-brand">
+        <span class="modal-brand-icon">🔑</span>
+        <h2>Reset Password</h2>
+      </div>
+
+      <div id="forgotStep1">
+        <p style="color:var(--muted);margin-bottom:20px;">Enter your email and we'll send a reset code.</p>
+        <div class="join-form">
+          <input type="email" id="forgot-email" placeholder="Email Address" class="form-input" />
+          <p class="form-error" id="forgotError"></p>
+          <button type="button" class="btn-primary btn-full" id="sendResetBtn">Send Reset Code</button>
+        </div>
+      </div>
+
+      <div id="forgotStep2" style="display:none;">
+        <p style="color:var(--muted);margin-bottom:16px;">Enter the code we sent and your new password.</p>
+        <div id="forgotDevCode" class="dev-code-box" style="display:none;"></div>
+        <div class="join-form">
+          <input type="text"     id="forgot-otp"     placeholder="6-digit reset code"         class="form-input otp-input" maxlength="6" />
+          <input type="password" id="forgot-newpass" placeholder="New Password (min. 6 chars)" class="form-input" />
+          <input type="password" id="forgot-confirm" placeholder="Confirm New Password"         class="form-input" />
+          <p class="form-error" id="forgotError2"></p>
+          <button type="button" class="btn-primary btn-full" id="resetPassBtn">Reset Password</button>
+        </div>
+      </div>
+
+      <p class="modal-switch"><a href="#" onclick="switchForgotToLogin()">← Back to Log In</a></p>
+    </div>
+  </div>
+
+
+  <!-- ===== PROFILE MODAL ===== -->
+  <div class="modal-overlay" id="profileOverlay">
+    <div class="modal">
+      <button class="modal-close" onclick="closeProfileModal()">✕</button>
+      <div class="profile-header" id="profileHeader"></div>
+      <div class="join-form" style="margin-top:20px;">
+        <label class="form-label">Name</label>
+        <input type="text" id="prof-name"    placeholder="Your Name"      class="form-input" />
+        <label class="form-label">Pet's Name</label>
+        <input type="text" id="prof-petname" placeholder="Pet's Name"     class="form-input" />
+        <label class="form-label">Pet Type</label>
+        <select id="prof-pettype" class="form-input">
           <option value="dog">Dog 🐕</option>
           <option value="cat">Cat 🐈</option>
           <option value="rabbit">Rabbit 🐇</option>
           <option value="bird">Bird 🦜</option>
           <option value="other">Other 🐾</option>
         </select>
-        <button type="submit" class="btn-primary" style="width:100%">Join Now!</button>
+        <p class="form-error" id="profileError"></p>
+        <button type="button" class="btn-primary btn-full" id="saveProfileBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== POST EVENT MODAL ===== -->
+  <div class="modal-overlay" id="postEventOverlay">
+    <div class="modal modal-wide">
+      <button class="modal-close" onclick="closePostEventModal()">✕</button>
+      <div class="modal-brand">
+        <span class="modal-brand-icon">🎉</span>
+        <h2>Post an Event</h2>
+        <p>Let the community know about your event</p>
+      </div>
+      <form class="join-form" id="postEventForm">
+        <input type="text" id="ev-title"    placeholder="Event Title"                  class="form-input" required />
+        <textarea          id="ev-desc"     placeholder="What's this event about?"     class="form-input form-textarea"></textarea>
+        <div class="form-row">
+          <input type="text" id="ev-date"   placeholder="Date (e.g. July 20, 2025)"   class="form-input" required />
+          <input type="text" id="ev-location" placeholder="Location"                   class="form-input" required />
+        </div>
+        <input type="text" id="ev-contact"  placeholder="Your contact number or email" class="form-input" required />
+        <select id="ev-pettype" class="form-input">
+          <option value="All pets">All pets welcome</option>
+          <option value="Dogs only">Dogs only</option>
+          <option value="Cats only">Cats only</option>
+          <option value="Rabbits only">Rabbits only</option>
+          <option value="Birds only">Birds only</option>
+        </select>
+        <p class="form-error" id="postEventError"></p>
+        <button type="submit" class="btn-primary btn-full">Post Event</button>
       </form>
+    </div>
+  </div>
+
+  <!-- ===== PRIVACY POLICY MODAL ===== -->
+  <div class="modal-overlay" id="privacyOverlay">
+    <div class="modal modal-wide">
+      <button class="modal-close" onclick="closePrivacyModal()">✕</button>
+      <h2>Privacy Policy 🔒</h2>
+      <div class="privacy-content">
+        <p><strong>Last updated: June 2025</strong></p>
+
+        <h4>What we collect</h4>
+        <p>When you register on PetVerse, we collect your name, email address, and your pet's information (name and type). When you use our platform, we also collect your activity — posts, likes, comments, event attendance, and pets you follow.</p>
+
+        <h4>How we use your information</h4>
+        <p>We use your information to run your PetVerse account, show your activity in the community feed, and send you verification codes via email. We do not sell your data to anyone.</p>
+
+        <h4>Passwords</h4>
+        <p>Your password is never stored in plain text. We use bcrypt hashing, which means even our own team cannot read your password.</p>
+
+        <h4>Community content</h4>
+        <p>Posts, comments, and events you create are visible to all PetVerse community members. You may post anonymously using the anonymous option in the feed.</p>
+
+        <h4>Donations</h4>
+        <p>Donations go directly to Richard B (GCash: 09858337254) for stray animal welfare. PetVerse does not process or store payment information — all transactions are handled through GCash.</p>
+
+        <h4>Your rights</h4>
+        <p>You can update your profile information at any time through your account settings. To delete your account or request your data, contact us at <a href="tel:09858337254">📞 09858337254</a>.</p>
+
+        <h4>Contact</h4>
+        <p>For any privacy concerns, you can reach us by calling <a href="tel:09858337254">09858337254</a>.</p>
+      </div>
     </div>
   </div>
 
