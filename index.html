@@ -212,13 +212,17 @@
         <div id="registerStep1">
           <div class="form-grid-2">
             <div class="auth-field">
-              <label>Your Name</label>
+              <label>Full Name</label>
               <input type="text" id="reg-name" placeholder="Juan dela Cruz" class="form-input" />
             </div>
             <div class="auth-field">
-              <label>Email Address</label>
-              <input type="email" id="reg-email" placeholder="you@email.com" class="form-input" autocomplete="email" />
+              <label>Nickname <span style="color:var(--muted);font-weight:400;">(community name)</span></label>
+              <input type="text" id="reg-nickname" placeholder="e.g. DogLover123" class="form-input" />
             </div>
+          </div>
+          <div class="auth-field">
+            <label>Email Address</label>
+            <input type="email" id="reg-email" placeholder="you@email.com" class="form-input" autocomplete="email" />
           </div>
           <div class="form-grid-2">
             <div class="auth-field">
@@ -336,31 +340,103 @@
 
   <!-- ===== PROFILE MODAL ===== -->
   <div class="modal-overlay" id="profileOverlay">
-    <div class="modal">
+    <div class="modal modal-wide profile-settings-modal">
       <button class="modal-close" onclick="closeProfileModal()">✕</button>
+
+      <!-- Header -->
       <div class="profile-header" id="profileHeader"></div>
-      <div class="auth-form" style="margin-top:20px;">
-        <div class="auth-field">
-          <label>Name</label>
-          <input type="text" id="prof-name" placeholder="Your Name" class="form-input" />
-        </div>
-        <div class="auth-field">
-          <label>Pet's Name</label>
-          <input type="text" id="prof-petname" placeholder="Pet's Name" class="form-input" />
-        </div>
-        <div class="auth-field">
-          <label>Pet Type</label>
-          <select id="prof-pettype" class="form-input">
-            <option value="dog">🐕 Dog</option>
-            <option value="cat">🐈 Cat</option>
-            <option value="rabbit">🐇 Rabbit</option>
-            <option value="bird">🦜 Bird</option>
-            <option value="other">🐾 Other</option>
-          </select>
-        </div>
-        <p class="form-error" id="profileError"></p>
-        <button type="button" class="btn-auth-submit" id="saveProfileBtn">Save Changes</button>
+
+      <!-- Tab nav -->
+      <div class="prof-tabs">
+        <button class="prof-tab active" data-tab="edit">✏️ Edit Profile</button>
+        <button class="prof-tab" data-tab="pets">🐾 My Pets</button>
+        <button class="prof-tab danger-tab" data-tab="danger">⚠️ Delete</button>
       </div>
+
+      <!-- Tab: Edit Profile -->
+      <div class="prof-tab-content" id="tab-edit">
+        <div class="auth-form">
+          <div class="form-grid-2">
+            <div class="auth-field">
+              <label>Full Name</label>
+              <input type="text" id="prof-name" placeholder="Your Name" class="form-input" />
+            </div>
+            <div class="auth-field">
+              <label>Nickname <span style="color:var(--muted);font-weight:400;">(shown in community)</span></label>
+              <input type="text" id="prof-nickname" placeholder="e.g. DogLover123" class="form-input" />
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="auth-field">
+              <label>Main Pet's Name</label>
+              <input type="text" id="prof-petname" placeholder="Pet's Name" class="form-input" />
+            </div>
+            <div class="auth-field">
+              <label>Pet Type</label>
+              <select id="prof-pettype" class="form-input">
+                <option value="dog">🐕 Dog</option>
+                <option value="cat">🐈 Cat</option>
+                <option value="rabbit">🐇 Rabbit</option>
+                <option value="bird">🦜 Bird</option>
+                <option value="other">🐾 Other</option>
+              </select>
+            </div>
+          </div>
+          <p class="form-error" id="profileError"></p>
+          <button type="button" class="btn-auth-submit" id="saveProfileBtn">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Tab: My Pets -->
+      <div class="prof-tab-content" id="tab-pets" style="display:none;">
+        <div id="myPetsList" class="my-pets-list"></div>
+        <div class="add-pet-form">
+          <div class="add-pet-title">+ Add a Pet</div>
+          <div class="form-grid-2">
+            <div class="auth-field">
+              <label>Pet Name</label>
+              <input type="text" id="new-pet-name" placeholder="e.g. Mochi" class="form-input" />
+            </div>
+            <div class="auth-field">
+              <label>Pet Type</label>
+              <select id="new-pet-type" class="form-input">
+                <option value="dog">🐕 Dog</option>
+                <option value="cat">🐈 Cat</option>
+                <option value="rabbit">🐇 Rabbit</option>
+                <option value="bird">🦜 Bird</option>
+                <option value="other">🐾 Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="auth-field">
+            <label>Bio <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
+            <input type="text" id="new-pet-bio" placeholder="Something fun about your pet..." class="form-input" />
+          </div>
+          <p class="form-error" id="addPetError"></p>
+          <button type="button" class="btn-auth-submit" id="addPetBtn">Add Pet 🐾</button>
+        </div>
+      </div>
+
+      <!-- Tab: Delete Account -->
+      <div class="prof-tab-content" id="tab-danger" style="display:none;">
+        <div class="danger-zone">
+          <div class="danger-icon">⚠️</div>
+          <div class="danger-title">Delete My Account</div>
+          <div class="danger-desc">
+            This will permanently delete your account, all your posts, pets, and events.
+            <strong>This cannot be undone.</strong>
+          </div>
+          <div class="auth-field" style="margin-top:16px;">
+            <label>Type <strong>DELETE</strong> to confirm</label>
+            <input type="text" id="delete-confirm-input" placeholder="Type DELETE here" class="form-input" />
+          </div>
+          <p class="form-error" id="deleteError"></p>
+          <button type="button" class="btn-delete-account" id="deleteAccountBtn">
+            Delete My Account Forever
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 

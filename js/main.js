@@ -9,11 +9,11 @@
 import { showToast, scrollToSection } from './utils.js';
 import {
   getStats, getMyState,
-  getPets, followPet,
+  getPets, getMyPets, addPet, removePet, followPet,
   getPosts, createPost, likePost, getComments, postComment,
   getEvents, joinEvent, getUserEvents, postUserEvent,
   sendOTP, register, login, resetPassword,
-  updateProfile, getUserTimeline
+  updateProfile, deleteAccount, getUserTimeline
 } from './api.js';
 
 
@@ -676,6 +676,7 @@ function setupRegisterForm() {
 
   sendOtpBtn.addEventListener('click', async () => {
     const name        = document.getElementById('reg-name').value.trim();
+    const nickname    = document.getElementById('reg-nickname').value.trim();
     const email       = document.getElementById('reg-email').value.trim();
     const password    = document.getElementById('reg-password').value;
     const confirmPass = document.getElementById('reg-confirm').value;
@@ -699,7 +700,7 @@ function setupRegisterForm() {
 
     try {
       await sendOTP({ email, type: 'register' });
-      step1Data  = { name, email, password, petName, petType };
+      step1Data  = { name, nickname, email, password, petName, petType };
 
       document.getElementById('registerStep1').style.display = 'none';
       document.getElementById('registerStep2').style.display = 'block';
@@ -884,13 +885,34 @@ function showProfileModal() {
 
   document.getElementById('profileHeader').innerHTML = `
     <div class="profile-avatar-big">${emoji}</div>
-    <div class="profile-name-big">${currentUser.name}</div>
-    <div class="profile-email-small">${currentUser.email}</div>
+    <div class="profile-name-big">${currentUser.nickname || currentUser.name}</div>
+    <div class="profile-email-small">${currentUser.name} · ${currentUser.email}</div>
   `;
-  document.getElementById('prof-name').value    = currentUser.name;
-  document.getElementById('prof-petname').value = currentUser.petName;
-  document.getElementById('prof-pettype').value = currentUser.petType;
+  document.getElementById('prof-name').value     = currentUser.name;
+  document.getElementById('prof-nickname').value = currentUser.nickname || currentUser.name;
+  document.getElementById('prof-petname').value  = currentUser.petName;
+  document.getElementById('prof-pettype').value  = currentUser.petType;
   document.getElementById('profileError').textContent = '';
+  document.getElementById('delete-confirm-input').value = '';
+  document.getElementById('deleteError').textContent = '';
+
+  // Tab switching
+  document.querySelectorAll('.prof-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.prof-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.prof-tab-content').forEach(c => c.style.display = 'none');
+      btn.classList.add('active');
+      document.getElementById(`tab-${btn.dataset.tab}`).style.display = 'block';
+      if (btn.dataset.tab === 'pets') loadMyPets();
+    });
+  });
+
+  // Show first tab
+  document.querySelectorAll('.prof-tab-content').forEach(c => c.style.display = 'none');
+  document.getElementById('tab-edit').style.display = 'block';
+  document.querySelectorAll('.prof-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector('.prof-tab[data-tab="edit"]').classList.add('active');
+
   document.getElementById('profileOverlay').classList.add('open');
 }
 
@@ -898,22 +920,63 @@ function closeProfileModal() {
   document.getElementById('profileOverlay').classList.remove('open');
 }
 
+async function loadMyPets() {
+  const list = document.getElementById('myPetsList');
+  list.innerHTML = '<p style="color:var(--muted);font-size:13px;">Loading...</p>';
+  try {
+    const pets = await getMyPets(currentUser.id);
+    if (pets.length === 0) {
+      list.innerHTML = '<p class="no-pets-msg">You have no pets added yet. Add one below!</p>';
+      return;
+    }
+    list.innerHTML = '';
+    pets.forEach(pet => {
+      const item = document.createElement('div');
+      item.className = 'my-pet-item';
+      item.innerHTML = `
+        <div class="my-pet-info">
+          <span class="my-pet-emoji">${pet.emoji}</span>
+          <div>
+            <div class="my-pet-name">${pet.name}</div>
+            <div class="my-pet-type">${pet.type} · ${pet.followers} followers</div>
+          </div>
+        </div>
+        <button class="remove-pet-btn" data-id="${pet.id}">Remove</button>
+      `;
+      item.querySelector('.remove-pet-btn').addEventListener('click', async () => {
+        if (!confirm(`Remove ${pet.name}?`)) return;
+        try {
+          await removePet(pet.id, currentUser.id);
+          loadMyPets();
+          showToast(`${pet.name} removed.`);
+        } catch (err) {
+          showToast(err.message);
+        }
+      });
+      list.appendChild(item);
+    });
+  } catch {
+    list.innerHTML = '<p style="color:red;font-size:13px;">Could not load pets.</p>';
+  }
+}
+
 function setupProfileForm() {
+  // Save profile
   document.getElementById('saveProfileBtn').addEventListener('click', async () => {
-    const name    = document.getElementById('prof-name').value.trim();
-    const petName = document.getElementById('prof-petname').value.trim();
-    const petType = document.getElementById('prof-pettype').value;
-    const errorEl = document.getElementById('profileError');
+    const name     = document.getElementById('prof-name').value.trim();
+    const nickname = document.getElementById('prof-nickname').value.trim();
+    const petName  = document.getElementById('prof-petname').value.trim();
+    const petType  = document.getElementById('prof-pettype').value;
+    const errorEl  = document.getElementById('profileError');
     errorEl.textContent = '';
 
     if (!name || !petName || !petType) { errorEl.textContent = 'Please fill in all fields.'; return; }
 
     const btn = document.getElementById('saveProfileBtn');
-    btn.disabled   = true;
-    btn.textContent = 'Saving...';
+    btn.disabled = true; btn.textContent = 'Saving...';
 
     try {
-      const { user } = await updateProfile({ userId: currentUser.id, name, petName, petType });
+      const { user } = await updateProfile({ userId: currentUser.id, name, nickname, petName, petType });
       currentUser = { ...currentUser, ...user };
       saveCurrentUser(currentUser);
       closeProfileModal();
@@ -923,8 +986,63 @@ function setupProfileForm() {
     } catch (err) {
       errorEl.textContent = err.message;
     } finally {
-      btn.disabled   = false;
-      btn.textContent = 'Save Changes';
+      btn.disabled = false; btn.textContent = 'Save Changes';
+    }
+  });
+
+  // Add pet
+  document.getElementById('addPetBtn').addEventListener('click', async () => {
+    const name    = document.getElementById('new-pet-name').value.trim();
+    const type    = document.getElementById('new-pet-type').value;
+    const bio     = document.getElementById('new-pet-bio').value.trim();
+    const errorEl = document.getElementById('addPetError');
+    errorEl.textContent = '';
+
+    if (!name) { errorEl.textContent = 'Enter a pet name.'; return; }
+
+    const btn = document.getElementById('addPetBtn');
+    btn.disabled = true; btn.textContent = 'Adding...';
+
+    try {
+      await addPet({ memberId: currentUser.id, name, type, bio });
+      document.getElementById('new-pet-name').value = '';
+      document.getElementById('new-pet-bio').value  = '';
+      loadMyPets();
+      showToast(`${name} added! 🐾`);
+    } catch (err) {
+      errorEl.textContent = err.message;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Add Pet 🐾';
+    }
+  });
+
+  // Delete account
+  document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+    const confirm = document.getElementById('delete-confirm-input').value.trim();
+    const errorEl = document.getElementById('deleteError');
+    errorEl.textContent = '';
+
+    if (confirm !== 'DELETE') {
+      errorEl.textContent = 'You must type DELETE exactly to confirm.'; return;
+    }
+
+    const btn = document.getElementById('deleteAccountBtn');
+    btn.disabled = true; btn.textContent = 'Deleting...';
+
+    try {
+      await deleteAccount({ userId: currentUser.id, confirm });
+      currentUser = null;
+      localStorage.removeItem('pv_user');
+      closeProfileModal();
+      updateNavForUser();
+      currentPage = 1;
+      const [postsData] = await Promise.all([getPosts()]);
+      allPosts = postsData;
+      renderFeed();
+      showToast('Your account has been deleted. Goodbye! 👋');
+    } catch (err) {
+      errorEl.textContent = err.message;
+      btn.disabled = false; btn.textContent = 'Delete My Account Forever';
     }
   });
 }
@@ -978,7 +1096,7 @@ function updateNavForUser() {
   if (currentUser) {
     const emoji = PET_EMOJI[currentUser.petType] || '🐾';
     navAuth.innerHTML = `
-      <button class="nav-user" onclick="showProfileModal()">${emoji} ${currentUser.name}</button>
+      <button class="nav-user" onclick="showProfileModal()">${emoji} ${currentUser.nickname || currentUser.name}</button>
       <button class="btn-logout" onclick="logout()">Log Out</button>
     `;
   } else {

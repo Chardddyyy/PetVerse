@@ -12,6 +12,17 @@ const SALT_ROUNDS = 10;
 let pool;
 function setPool(p) { pool = p; }
 
+function formatUser(m) {
+  return {
+    id:       m.id,
+    name:     m.name,
+    nickname: m.nickname || m.name,
+    email:    m.email,
+    petName:  m.pet_name,
+    petType:  m.pet_type
+  };
+}
+
 // POST /api/auth/send-otp
 router.post('/send-otp', async (req, res) => {
   const { email, type } = req.body;
@@ -50,7 +61,7 @@ router.post('/send-otp', async (req, res) => {
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-  const { name, email, password, petName, petType, otpCode } = req.body;
+  const { name, nickname, email, password, petName, petType, otpCode } = req.body;
 
   if (!name || !email || !password || !petName || !petType || !otpCode)
     return res.status(400).json({ error: 'Please fill in all fields.' });
@@ -71,17 +82,16 @@ router.post('/register', async (req, res) => {
 
     await pool.query('UPDATE otps SET used = 1 WHERE id = ?', [otpRows[0].id]);
 
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    const passwordHash  = await bcrypt.hash(password, SALT_ROUNDS);
+    const displayNick   = sanitize(nickname) || sanitize(name);
     const [result] = await pool.query(
-      'INSERT INTO members (name, email, password_hash, pet_name, pet_type) VALUES (?, ?, ?, ?, ?)',
-      [sanitize(name), email, passwordHash, sanitize(petName), petType]
+      'INSERT INTO members (name, nickname, email, password_hash, pet_name, pet_type) VALUES (?, ?, ?, ?, ?, ?)',
+      [sanitize(name), displayNick, email, passwordHash, sanitize(petName), petType]
     );
 
     const [[member]] = await pool.query('SELECT * FROM members WHERE id = ?', [result.insertId]);
-    broadcast('new_member', { name: member.name, petName: member.pet_name, petType: member.pet_type });
-    res.json({
-      user: { id: member.id, name: member.name, email: member.email, petName: member.pet_name, petType: member.pet_type }
-    });
+    broadcast('new_member', { name: member.name, nickname: member.nickname, petName: member.pet_name, petType: member.pet_type });
+    res.json({ user: formatUser(member) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -103,7 +113,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Wrong email or password.' });
 
     const m = rows[0];
-    res.json({ user: { id: m.id, name: m.name, email: m.email, petName: m.pet_name, petType: m.pet_type } });
+    res.json({ user: formatUser(m) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -154,7 +164,7 @@ router.post('/login-with-code', async (req, res) => {
 
     await pool.query('UPDATE otps SET used = 1 WHERE id = ?', [otpRows[0].id]);
     const m = rows[0];
-    res.json({ user: { id: m.id, name: m.name, email: m.email, petName: m.pet_name, petType: m.pet_type } });
+    res.json({ user: formatUser(m) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -183,7 +193,7 @@ router.post('/facebook', async (req, res) => {
       broadcast('new_member', { name: fbData.name, petName: 'My Pet', petType: 'other' });
     }
     const m = rows[0];
-    res.json({ user: { id: m.id, name: m.name, email: m.email, petName: m.pet_name, petType: m.pet_type } });
+    res.json({ user: formatUser(m) });
   } catch {
     res.status(500).json({ error: 'Facebook login failed. Try again.' });
   }
@@ -212,7 +222,7 @@ router.post('/google', async (req, res) => {
       broadcast('new_member', { name: gData.name, petName: 'My Pet', petType: 'other' });
     }
     const m = rows[0];
-    res.json({ user: { id: m.id, name: m.name, email: m.email, petName: m.pet_name, petType: m.pet_type } });
+    res.json({ user: formatUser(m) });
   } catch {
     res.status(500).json({ error: 'Google login failed. Try again.' });
   }
@@ -220,16 +230,59 @@ router.post('/google', async (req, res) => {
 
 // PUT /api/auth/profile
 router.put('/profile', async (req, res) => {
-  const { userId, name, petName, petType } = req.body;
+  const { userId, name, nickname, petName, petType } = req.body;
   if (!userId || !name || !petName || !petType)
     return res.status(400).json({ error: 'All fields are required.' });
 
   try {
+    const displayNick = sanitize(nickname) || sanitize(name);
     await pool.query(
-      'UPDATE members SET name = ?, pet_name = ?, pet_type = ? WHERE id = ?',
-      [sanitize(name), sanitize(petName), petType, userId]
+      'UPDATE members SET name = ?, nickname = ?, pet_name = ?, pet_type = ? WHERE id = ?',
+      [sanitize(name), displayNick, sanitize(petName), petType, userId]
     );
-    res.json({ user: { id: userId, name, petName, petType } });
+    const [[member]] = await pool.query('SELECT * FROM members WHERE id = ?', [userId]);
+    res.json({ user: formatUser(member) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/auth/account
+router.delete('/account', async (req, res) => {
+  const { userId, confirm } = req.body;
+  if (!userId) return res.status(400).json({ error: 'User ID is required.' });
+  if (confirm !== 'DELETE') return res.status(400).json({ error: 'Type DELETE to confirm.' });
+
+  try {
+    const [[member]] = await pool.query('SELECT * FROM members WHERE id = ?', [userId]);
+    if (!member) return res.status(404).json({ error: 'Account not found.' });
+
+    // Delete posts and related data
+    const [posts] = await pool.query('SELECT id FROM posts WHERE author = ?', [member.name]);
+    if (posts.length > 0) {
+      const ids = posts.map(p => p.id);
+      await pool.query('DELETE FROM post_likes WHERE post_id IN (?)', [ids]);
+      await pool.query('DELETE FROM comments   WHERE post_id IN (?)', [ids]);
+      await pool.query('DELETE FROM post_tags  WHERE post_id IN (?)', [ids]);
+      await pool.query('DELETE FROM posts      WHERE id IN (?)',      [ids]);
+    }
+
+    // Delete user's pets and their follows
+    const [pets] = await pool.query('SELECT id FROM pets WHERE member_id = ?', [userId]);
+    if (pets.length > 0) {
+      const ids = pets.map(p => p.id);
+      await pool.query('DELETE FROM pet_follows WHERE pet_id IN (?)', [ids]);
+      await pool.query('DELETE FROM pets         WHERE id IN (?)',    [ids]);
+    }
+
+    // Delete user events and OTPs
+    await pool.query('DELETE FROM user_events WHERE poster_id = ?', [userId]);
+    await pool.query('DELETE FROM otps         WHERE email = ?',    [member.email]);
+
+    // Delete member
+    await pool.query('DELETE FROM members WHERE id = ?', [userId]);
+
+    res.json({ message: 'Account deleted.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -25,36 +25,40 @@ async function request(method, path, body = null) {
 }
 
 // --- Config ---
-export const getConfig     = () => request('GET', '/config');
+export const getConfig        = ()     => request('GET',  '/config');
 
 // --- Stats ---
-export const getStats      = () => request('GET', '/stats');
+export const getStats         = ()     => request('GET',  '/stats');
 
 // --- Session state ---
-export const getMyState    = () => request('GET', `/session/state?sessionId=${sessionId}`);
+export const getMyState       = ()     => request('GET',  `/session/state?sessionId=${sessionId}`);
 
 // --- Pets ---
-export const getPets       = ()    => request('GET',  '/pets');
-export const followPet     = (id)  => request('POST', `/pets/${id}/follow`, { sessionId });
+export const getPets          = ()         => request('GET',    '/pets');
+export const getMyPets        = (userId)   => request('GET',    `/pets/mine?userId=${userId}`);
+export const addPet           = (data)     => request('POST',   '/pets',              data);
+export const removePet        = (id, uid)  => request('DELETE', `/pets/${id}`,        { userId: uid });
+export const followPet        = (id)       => request('POST',   `/pets/${id}/follow`, { sessionId });
 
 // --- Posts ---
-export const getPosts      = ()         => request('GET',  '/posts');
-export const createPost    = (data)     => request('POST', '/posts',                { ...data, sessionId });
-export const likePost      = (id)       => request('POST', `/posts/${id}/like`,     { sessionId });
-export const getComments   = (id)       => request('GET',  `/posts/${id}/comments`);
-export const postComment   = (id, data) => request('POST', `/posts/${id}/comments`, data);
+export const getPosts         = ()         => request('GET',  '/posts');
+export const createPost       = (data)     => request('POST', '/posts',                { ...data, sessionId });
+export const likePost         = (id)       => request('POST', `/posts/${id}/like`,     { sessionId });
+export const getComments      = (id)       => request('GET',  `/posts/${id}/comments`);
+export const postComment      = (id, data) => request('POST', `/posts/${id}/comments`, data);
 
 // --- Events ---
-export const getEvents     = ()     => request('GET',  '/events');
-export const joinEvent     = (id)   => request('POST', `/events/${id}/join`, { sessionId });
-export const getUserEvents = ()     => request('GET',  '/user-events');
-export const postUserEvent = (data) => request('POST', '/user-events', data);
+export const getEvents        = ()     => request('GET',  '/events');
+export const joinEvent        = (id)   => request('POST', `/events/${id}/join`, { sessionId });
+export const getUserEvents    = ()     => request('GET',  '/user-events');
+export const postUserEvent    = (data) => request('POST', '/user-events',        data);
 
 // --- Auth ---
-export const sendOTP          = (data) => request('POST', '/auth/send-otp',         data);
-export const register         = (data) => request('POST', '/auth/register',         data);
-export const login            = (data) => request('POST', '/auth/login',            data);
-export const resetPassword    = (data) => request('POST', '/auth/reset-password',   data);
-export const loginWithCode    = (data) => request('POST', '/auth/login-with-code',  data);
-export const updateProfile    = (data) => request('PUT',  '/auth/profile',           data);
-export const getUserTimeline  = (name) => request('GET',  `/timeline/${encodeURIComponent(name)}`);
+export const sendOTP          = (data) => request('POST',   '/auth/send-otp',        data);
+export const register         = (data) => request('POST',   '/auth/register',        data);
+export const login            = (data) => request('POST',   '/auth/login',           data);
+export const resetPassword    = (data) => request('POST',   '/auth/reset-password',  data);
+export const loginWithCode    = (data) => request('POST',   '/auth/login-with-code', data);
+export const updateProfile    = (data) => request('PUT',    '/auth/profile',         data);
+export const deleteAccount    = (data) => request('DELETE', '/auth/account',         data);
+export const getUserTimeline  = (name) => request('GET',    `/timeline/${encodeURIComponent(name)}`);

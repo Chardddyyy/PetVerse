@@ -13,6 +13,7 @@ USE petverse;
 CREATE TABLE IF NOT EXISTS members (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   name          VARCHAR(100) NOT NULL,
+  nickname      VARCHAR(50)  DEFAULT NULL,
   email         VARCHAR(150) NOT NULL UNIQUE,
   password_hash VARCHAR(255),
   facebook_id   VARCHAR(100) DEFAULT NULL,
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS members (
 
 CREATE TABLE IF NOT EXISTS pets (
   id         INT AUTO_INCREMENT PRIMARY KEY,
+  member_id  INT          DEFAULT NULL,
   name       VARCHAR(100) NOT NULL,
   type       VARCHAR(50)  NOT NULL,
   breed      VARCHAR(100),
