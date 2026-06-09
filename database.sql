@@ -224,16 +224,16 @@ INSERT INTO events (title, description, date, location, emoji, color, attendees)
 -- SEED DATA — MEMBERS
 -- =====================================================
 
-INSERT INTO members (name, email, pet_name, pet_type) VALUES
-('Maria Santos',  'maria@petverse.ph',  'Max',     'dog'),
-('Juan dela Cruz','juan@petverse.ph',   'Luna',    'cat'),
-('Anne Reyes',    'anne@petverse.ph',   'Coco',    'bird'),
-('Carlo Mendoza', 'carlo@petverse.ph',  'Buddy',   'dog'),
-('Kim Flores',    'kim@petverse.ph',    'Mochi',   'cat'),
-('Nina Garcia',   'nina@petverse.ph',   'Thumper', 'rabbit'),
-('Bong Reyes',    'bong@petverse.ph',   'Kiko',    'dog'),
-('Trisha Lim',    'trisha@petverse.ph', 'Nala',    'cat'),
-('Rose Aquino',   'rose@petverse.ph',   'Mocha',   'dog'),
-('Isko Santos',   'isko@petverse.ph',   'Tweety',  'bird'),
-('Cathy Cruz',    'cathy@petverse.ph',  'Peanut',  'rabbit'),
-('Mark Torres',   'mark@petverse.ph',   'Bruno',   'dog');
+INSERT INTO members (name, nickname, email, pet_name, pet_type) VALUES
+('Maria Santos',  'MariaS',   'maria@petverse.ph',  'Max',     'dog'),
+('Juan dela Cruz','JuanDC',   'juan@petverse.ph',   'Luna',    'cat'),
+('Anne Reyes',    'AnneR',    'anne@petverse.ph',   'Coco',    'bird'),
+('Carlo Mendoza', 'CarloM',   'carlo@petverse.ph',  'Buddy',   'dog'),
+('Kim Flores',    'KimF',     'kim@petverse.ph',    'Mochi',   'cat'),
+('Nina Garcia',   'NinaG',    'nina@petverse.ph',   'Thumper', 'rabbit'),
+('Bong Reyes',    'BongR',    'bong@petverse.ph',   'Kiko',    'dog'),
+('Trisha Lim',    'TrishaL',  'trisha@petverse.ph', 'Nala',    'cat'),
+('Rose Aquino',   'RoseA',    'rose@petverse.ph',   'Mocha',   'dog'),
+('Isko Santos',   'IskoS',    'isko@petverse.ph',   'Tweety',  'bird'),
+('Cathy Cruz',    'CathyC',   'cathy@petverse.ph',  'Peanut',  'rabbit'),
+('Mark Torres',    'MarkT',    'mark@petverse.ph',   'Bruno',   'dog');

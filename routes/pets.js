@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
 
     const [result] = await pool.query(
       'INSERT INTO pets (member_id, name, type, breed, owner, emoji, bio, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [memberId, sanitize(name), type, sanitize(breed || ''), member.name, emoji, sanitize(bio || ''), color]
+      [memberId, sanitize(name), type, sanitize(breed) || null, member.name, emoji, sanitize(bio) || null, color]
     );
     const [[pet]] = await pool.query('SELECT * FROM pets WHERE id = ?', [result.insertId]);
     broadcast('new_pet', { pet: formatPet(pet) });

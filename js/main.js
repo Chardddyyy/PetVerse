@@ -193,6 +193,7 @@ function createPostCard(post, isLiked) {
 
   const card = document.createElement('div');
   card.className = 'post-card';
+  card.dataset.postId = id;
 
   const tagsHTML = (tags || []).map(t => `<span class="post-tag">#${t}</span>`).join('');
 
@@ -664,8 +665,10 @@ function closeRegisterModal() {
   document.getElementById('otpError').textContent = '';
   document.getElementById('registerStep1').style.display = 'block';
   document.getElementById('registerStep2').style.display = 'none';
-  document.getElementById('registerDesc').textContent    = 'Create your free account';
+  document.getElementById('registerDesc').textContent = 'Create your free account';
   document.getElementById('registerForm').reset();
+  document.getElementById('stepDot1').classList.add('active');
+  document.getElementById('stepDot2').classList.remove('active');
 }
 
 function setupRegisterForm() {
@@ -705,6 +708,8 @@ function setupRegisterForm() {
       document.getElementById('registerStep1').style.display = 'none';
       document.getElementById('registerStep2').style.display = 'block';
       document.getElementById('registerDesc').textContent    = 'Enter the code sent to your email';
+      document.getElementById('stepDot1').classList.remove('active');
+      document.getElementById('stepDot2').classList.add('active');
     } catch (err) {
       errorEl.textContent = err.message;
     } finally {

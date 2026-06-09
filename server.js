@@ -4,20 +4,21 @@
 
 require('dotenv').config();
 
-const express    = require('express');
-const mysql      = require('mysql2/promise');
-const helmet     = require('helmet');
-const rateLimit  = require('express-rate-limit');
-const cors       = require('cors');
-const path       = require('path');
+const express        = require('express');
+const mysql          = require('mysql2/promise');
+const helmet         = require('helmet');
+const rateLimit      = require('express-rate-limit');
+const cors           = require('cors');
+const path           = require('path');
 
-const adminPanel   = require('./admin-panel');
-const streamRoutes = require('./routes/stream');
-const statsRoutes  = require('./routes/stats');
-const petsRoutes   = require('./routes/pets');
-const postsRoutes  = require('./routes/posts');
-const eventsRoutes = require('./routes/events');
-const authRoutes   = require('./routes/auth');
+const adminPanel     = require('./admin-panel');
+const streamRoutes   = require('./routes/stream');
+const statsRoutes    = require('./routes/stats');
+const petsRoutes     = require('./routes/pets');
+const postsRoutes    = require('./routes/posts');
+const eventsRoutes   = require('./routes/events');
+const authRoutes     = require('./routes/auth');
+const timelineRoutes = require('./routes/timeline');
 
 const app = express();
 
@@ -59,41 +60,41 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-// Database admin panel — http://localhost:4000/phpmyadmin/
+// Database admin panel
 adminPanel.setPool(pool);
 app.use('/phpmyadmin', adminPanel.router);
 
-// Live updates stream — SSE
+// Live updates (SSE)
 app.use('/api/stream', streamRoutes.router);
 
-// API — stats and session state
+// Stats and session
 statsRoutes.setPool(pool);
 app.use('/api', statsRoutes.router);
 
-// API — pets
+// Pets
 petsRoutes.setPool(pool);
 app.use('/api/pets', petsRoutes.router);
 
-// API — posts and comments
+// Posts and comments
 postsRoutes.setPool(pool);
 app.use('/api/posts', postsRoutes.router);
 
-// API — events and user-events
+// Events and user-events
 eventsRoutes.setPool(pool);
 app.use('/api', eventsRoutes.router);
 
-// API — auth, profile, timeline (rate-limited)
+// Auth — rate-limited
 authRoutes.setPool(pool);
 app.use('/api/auth', authLimiter);
 app.use('/api/auth', authRoutes.router);
-app.use('/api',      authRoutes.router); // timeline route lives here too
+
+// Public user timeline
+timelineRoutes.setPool(pool);
+app.use('/api/timeline', timelineRoutes.router);
 
 // ===== START SERVER =====
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`\n🐾 PetVerse running → http://localhost:${PORT}`);
-  console.log(`📊 DB Admin panel  → http://localhost:${PORT}/phpmyadmin/`);
-  if (!process.env.EMAIL_USER || process.env.EMAIL_USER.includes('your_gmail')) {
-    console.log('⚠  Email not configured — OTP codes will appear in this terminal.\n');
-  }
+  console.log(`📊 DB Admin panel  → http://localhost:${PORT}/phpmyadmin/\n`);
 });
