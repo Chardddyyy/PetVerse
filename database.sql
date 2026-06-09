@@ -37,7 +37,8 @@ CREATE TABLE IF NOT EXISTS pets (
   likes      INT          DEFAULT 0,
   followers  INT          DEFAULT 0,
   bio        TEXT,
-  color      VARCHAR(50)  DEFAULT '#F3F4F6'
+  color      VARCHAR(50)  DEFAULT '#F3F4F6',
+  INDEX idx_member_id (member_id)
 );
 
 CREATE TABLE IF NOT EXISTS pet_follows (
