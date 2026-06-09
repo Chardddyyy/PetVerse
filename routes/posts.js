@@ -1,8 +1,9 @@
 // routes/posts.js — posts and comments
 
-const express                       = require('express');
-const router                        = express.Router();
+const express                           = require('express');
+const router                            = express.Router();
 const { sanitize, timeAgo, formatPost } = require('../lib/helpers');
+const { broadcast }                     = require('./stream');
 
 let pool;
 function setPool(p) { pool = p; }
@@ -38,7 +39,9 @@ router.post('/', async (req, res) => {
       'SELECT p.*, 0 AS comments, NULL AS tags FROM posts p WHERE p.id = ?',
       [result.insertId]
     );
-    res.json(formatPost(row));
+    const post = formatPost(row);
+    broadcast('new_post', { post });
+    res.json(post);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -60,6 +63,7 @@ router.post('/:id/like', async (req, res) => {
       await pool.query('UPDATE posts SET likes = likes + 1 WHERE id = ?', [id]);
     }
     const [[post]] = await pool.query('SELECT likes FROM posts WHERE id = ?', [id]);
+    broadcast('post_liked', { postId: Number(id), likes: post.likes });
     res.json({ liked: existing.length === 0, likes: post.likes });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -87,7 +91,9 @@ router.post('/:id/comments', async (req, res) => {
       [req.params.id, sanitize(author), sanitize(text)]
     );
     const [[row]] = await pool.query('SELECT * FROM comments WHERE id = ?', [result.insertId]);
-    res.json({ id: row.id, author: row.author, text: row.text, time: 'just now' });
+    const comment = { id: row.id, author: row.author, text: row.text, time: 'just now' };
+    broadcast('new_comment', { postId: Number(req.params.id) });
+    res.json(comment);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

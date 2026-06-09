@@ -1,10 +1,11 @@
 // routes/auth.js — register, login, OTP, social auth, profile, timeline
 
-const express              = require('express');
-const router               = express.Router();
-const bcrypt               = require('bcrypt');
+const express               = require('express');
+const router                = express.Router();
+const bcrypt                = require('bcrypt');
 const { sanitize, timeAgo } = require('../lib/helpers');
-const { sendOTPEmail }     = require('../lib/mailer');
+const { sendOTPEmail }      = require('../lib/mailer');
+const { broadcast }         = require('./stream');
 
 const SALT_ROUNDS = 10;
 
@@ -22,7 +23,6 @@ router.post('/send-otp', async (req, res) => {
       if (existing.length > 0)
         return res.status(400).json({ error: 'That email is already registered.' });
     }
-
     if (type === 'reset') {
       const [existing] = await pool.query(
         'SELECT id FROM members WHERE email = ? AND password_hash IS NOT NULL', [email]
@@ -41,11 +41,10 @@ router.post('/send-otp', async (req, res) => {
     );
 
     await sendOTPEmail(email, code, type);
-
     res.json({ message: 'Code sent! Check your email.' });
   } catch (err) {
     console.error('OTP error:', err.message);
-    res.status(500).json({ error: 'Could not send the code. Check server logs.' });
+    res.status(500).json({ error: err.message || 'Could not send the code. Check server logs.' });
   }
 });
 
@@ -79,6 +78,7 @@ router.post('/register', async (req, res) => {
     );
 
     const [[member]] = await pool.query('SELECT * FROM members WHERE id = ?', [result.insertId]);
+    broadcast('new_member', { name: member.name, petName: member.pet_name, petType: member.pet_type });
     res.json({
       user: { id: member.id, name: member.name, email: member.email, petName: member.pet_name, petType: member.pet_type }
     });
@@ -128,7 +128,6 @@ router.post('/reset-password', async (req, res) => {
     const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
     await pool.query('UPDATE members SET password_hash = ? WHERE email = ?', [hash, email]);
     await pool.query('UPDATE otps SET used = 1 WHERE id = ?', [otpRows[0].id]);
-
     res.json({ message: 'Password reset successfully!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -181,8 +180,8 @@ router.post('/facebook', async (req, res) => {
         [fbData.name, fbData.email || '', fbData.id, 'My Pet', 'other']
       );
       [rows] = await pool.query('SELECT * FROM members WHERE id = ?', [result.insertId]);
+      broadcast('new_member', { name: fbData.name, petName: 'My Pet', petType: 'other' });
     }
-
     const m = rows[0];
     res.json({ user: { id: m.id, name: m.name, email: m.email, petName: m.pet_name, petType: m.pet_type } });
   } catch {
@@ -210,8 +209,8 @@ router.post('/google', async (req, res) => {
         [gData.name, gData.email, gData.sub, 'My Pet', 'other']
       );
       [rows] = await pool.query('SELECT * FROM members WHERE id = ?', [result.insertId]);
+      broadcast('new_member', { name: gData.name, petName: 'My Pet', petType: 'other' });
     }
-
     const m = rows[0];
     res.json({ user: { id: m.id, name: m.name, email: m.email, petName: m.pet_name, petType: m.pet_type } });
   } catch {
@@ -236,7 +235,7 @@ router.put('/profile', async (req, res) => {
   }
 });
 
-// GET /api/timeline/:name
+// GET /api/timeline/:name  — full profile with stats
 router.get('/timeline/:name', async (req, res) => {
   const name = decodeURIComponent(req.params.name);
   try {
@@ -246,20 +245,46 @@ router.get('/timeline/:name', async (req, res) => {
     const member = members[0] || { name, pet_name: 'their pet', pet_type: 'other' };
 
     const [posts] = await pool.query(
-      'SELECT id, content, likes, pet_emoji, created_at FROM posts WHERE author = ? ORDER BY created_at DESC LIMIT 10',
-      [name]
-    );
-    const [events] = await pool.query(
-      'SELECT title, date, location FROM user_events WHERE poster_name = ? ORDER BY created_at DESC',
+      `SELECT p.id, p.content, p.likes, p.pet_emoji, p.created_at,
+              COUNT(DISTINCT c.id) AS comments
+       FROM posts p
+       LEFT JOIN comments c ON c.post_id = p.id
+       WHERE p.author = ?
+       GROUP BY p.id
+       ORDER BY p.created_at DESC
+       LIMIT 20`,
       [name]
     );
 
+    const [[{ totalLikes }]] = await pool.query(
+      'SELECT COALESCE(SUM(likes), 0) AS totalLikes FROM posts WHERE author = ?', [name]
+    );
+
+    const [events] = await pool.query(
+      'SELECT title, date, location, emoji FROM user_events WHERE poster_name = ? ORDER BY created_at DESC',
+      [name]
+    );
+
+    const [pets] = await pool.query(
+      'SELECT name, emoji, type, followers FROM pets WHERE owner = ?', [name]
+    );
+
     res.json({
-      name:    member.name,
-      petName: member.pet_name,
-      petType: member.pet_type,
-      posts:   posts.map(p => ({ id: p.id, content: p.content, likes: p.likes, time: timeAgo(p.created_at) })),
-      events:  events.map(e => ({ title: e.title, date: e.date, location: e.location }))
+      name:       member.name,
+      petName:    member.pet_name,
+      petType:    member.pet_type,
+      totalPosts: posts.length,
+      totalLikes: Number(totalLikes),
+      posts:  posts.map(p => ({
+        id:       p.id,
+        content:  p.content,
+        likes:    p.likes,
+        comments: Number(p.comments),
+        emoji:    p.pet_emoji,
+        time:     timeAgo(p.created_at)
+      })),
+      events: events.map(e => ({ title: e.title, date: e.date, location: e.location, emoji: e.emoji || '🎉' })),
+      pets:   pets.map(p => ({ name: p.name, emoji: p.emoji, type: p.type, followers: p.followers }))
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -12,6 +12,7 @@ const cors       = require('cors');
 const path       = require('path');
 
 const adminPanel   = require('./admin-panel');
+const streamRoutes = require('./routes/stream');
 const statsRoutes  = require('./routes/stats');
 const petsRoutes   = require('./routes/pets');
 const postsRoutes  = require('./routes/posts');
@@ -61,6 +62,9 @@ app.get('/api/config', (req, res) => {
 // Database admin panel — http://localhost:4000/phpmyadmin/
 adminPanel.setPool(pool);
 app.use('/phpmyadmin', adminPanel.router);
+
+// Live updates stream — SSE
+app.use('/api/stream', streamRoutes.router);
 
 // API — stats and session state
 statsRoutes.setPool(pool);

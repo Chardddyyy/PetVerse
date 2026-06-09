@@ -1,8 +1,9 @@
 // routes/events.js — events and user-posted events
 
-const express           = require('express');
-const router            = express.Router();
-const { sanitize, formatEvent } = require('../lib/helpers');
+const express                    = require('express');
+const router                     = express.Router();
+const { sanitize, formatEvent }  = require('../lib/helpers');
+const { broadcast }              = require('./stream');
 
 let pool;
 function setPool(p) { pool = p; }
@@ -64,16 +65,16 @@ router.get('/user-events', async (req, res) => {
 // POST /api/user-events
 router.post('/user-events', async (req, res) => {
   const { posterId, posterName, contact, title, description, date, location, emoji, petType } = req.body;
-  if (!posterId || !title || !date || !location || !contact) {
+  if (!posterId || !title || !date || !location || !contact)
     return res.status(400).json({ error: 'Please fill in all required fields.' });
-  }
+
   try {
     const [result] = await pool.query(
       'INSERT INTO user_events (poster_id, poster_name, contact, title, description, date, location, emoji, pet_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [posterId, sanitize(posterName), sanitize(contact), sanitize(title), sanitize(description), sanitize(date), sanitize(location), emoji || '🐾', petType]
     );
     const [[row]] = await pool.query('SELECT * FROM user_events WHERE id = ?', [result.insertId]);
-    res.json({
+    const event = {
       id:          `ue${row.id}`,
       title:       row.title,
       desc:        row.description,
@@ -85,7 +86,9 @@ router.post('/user-events', async (req, res) => {
       posterName:  row.poster_name,
       petType:     row.pet_type,
       isUserEvent: true
-    });
+    };
+    broadcast('new_event', { event });
+    res.json(event);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

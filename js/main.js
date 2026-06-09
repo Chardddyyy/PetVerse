@@ -543,16 +543,39 @@ function showTimelineModal(data) {
   document.getElementById('timelineOverlay')?.remove();
 
   const emoji = PET_EMOJI[data.petType] || '🐾';
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay open';
-  overlay.id = 'timelineOverlay';
+
+  const statsBar = `
+    <div class="profile-stats-bar">
+      <div class="profile-stat"><span class="profile-stat-num">${data.totalPosts}</span><span class="profile-stat-label">Posts</span></div>
+      <div class="profile-stat"><span class="profile-stat-num">${data.totalLikes.toLocaleString()}</span><span class="profile-stat-label">Total Likes</span></div>
+      <div class="profile-stat"><span class="profile-stat-num">${data.events.length}</span><span class="profile-stat-label">Events</span></div>
+      <div class="profile-stat"><span class="profile-stat-num">${data.pets.length}</span><span class="profile-stat-label">Pets</span></div>
+    </div>
+  `;
+
+  const petsHTML = data.pets.length === 0 ? '' : `
+    <div class="timeline-section-title">🐾 Pets</div>
+    <div class="profile-pets-row">
+      ${data.pets.map(p => `
+        <div class="profile-pet-chip">
+          <span>${p.emoji}</span>
+          <div>
+            <div class="ppc-name">${p.name}</div>
+            <div class="ppc-followers">${p.followers} followers</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 
   const postsHTML = data.posts.length === 0
     ? '<p class="timeline-empty">No posts yet.</p>'
     : data.posts.map(p => `
         <div class="timeline-post-item">
-          ${p.content}
-          <div class="timeline-post-meta">❤️ ${p.likes} · ${p.time}</div>
+          <div class="timeline-post-content">${p.content}</div>
+          <div class="timeline-post-meta">
+            ❤️ ${p.likes} likes · 💬 ${p.comments} comments · ${p.time}
+          </div>
         </div>
       `).join('');
 
@@ -560,13 +583,16 @@ function showTimelineModal(data) {
     ? '<p class="timeline-empty">No events posted yet.</p>'
     : data.events.map(e => `
         <div class="timeline-event-item">
-          <div class="timeline-event-title">🎉 ${e.title}</div>
+          <div class="timeline-event-title">${e.emoji || '🎉'} ${e.title}</div>
           <div class="timeline-event-date">📅 ${e.date} · 📍 ${e.location}</div>
         </div>
       `).join('');
 
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.id = 'timelineOverlay';
   overlay.innerHTML = `
-    <div class="modal modal-wide">
+    <div class="modal modal-wide profile-modal-body">
       <button class="modal-close" onclick="document.getElementById('timelineOverlay').remove()">✕</button>
       <div class="timeline-header">
         <div class="timeline-avatar">${emoji}</div>
@@ -575,9 +601,11 @@ function showTimelineModal(data) {
           <div class="timeline-sub">with ${data.petName}</div>
         </div>
       </div>
+      ${statsBar}
+      ${petsHTML}
       <div class="timeline-section-title">📝 Posts</div>
       ${postsHTML}
-      <div class="timeline-section-title">🎉 Events Posted</div>
+      <div class="timeline-section-title">🎉 Events Hosted</div>
       ${eventsHTML}
     </div>
   `;
@@ -1048,6 +1076,9 @@ async function init() {
     renderFeed();
     renderEvents();
 
+    setupSSE();
+    setupFlatpickr();
+
     console.log('PetVerse loaded!');
   } catch {
     const msg = '<div class="loading">⚠️ Server not running — open terminal and run: node server.js</div>';
@@ -1057,5 +1088,98 @@ async function init() {
     showToast('Start the server first: node server.js');
   }
 }
+
+
+// ===== FLATPICKR CALENDAR =====
+function setupFlatpickr() {
+  if (typeof flatpickr === 'undefined') return;
+  flatpickr('#ev-date', {
+    altInput:    true,
+    altFormat:   'F j, Y',
+    dateFormat:  'F j, Y',
+    minDate:     'today',
+    disableMobile: false
+  });
+}
+
+
+// ===== LIVE UPDATES (SSE) =====
+function setupSSE() {
+  const es = new EventSource('http://localhost:4000/api/stream');
+
+  es.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      handleLiveEvent(data);
+    } catch { /* ignore parse errors */ }
+  };
+
+  es.onerror = () => {
+    // Silently reconnect — browser handles this automatically
+  };
+}
+
+function handleLiveEvent(data) {
+  switch (data.event) {
+
+    case 'new_post': {
+      // Only show live new posts if we are on page 1
+      if (currentPage !== 1) return;
+      const isOwn = currentUser && data.post.author === currentUser.name;
+      if (isOwn) return; // already added locally on submit
+      allPosts = [data.post, ...allPosts];
+      renderFeed();
+      showLiveBadge('📝 New post just shared!');
+      break;
+    }
+
+    case 'new_event': {
+      const isOwn = currentUser && data.event.posterName === currentUser.name;
+      if (isOwn) return;
+      allEvents = [data.event, ...allEvents];
+      renderEvents();
+      showLiveBadge('🎉 New event posted!');
+      break;
+    }
+
+    case 'new_member': {
+      // Bump member count in stats bar
+      const numEl = document.querySelector('.stat-card:first-child .stat-number');
+      if (numEl) {
+        const cur = parseInt(numEl.textContent.replace(/\D/g, '')) || 0;
+        numEl.textContent = `${(cur + 1).toLocaleString()}+`;
+        numEl.classList.add('stat-bump');
+        setTimeout(() => numEl.classList.remove('stat-bump'), 600);
+      }
+      showLiveBadge(`🐾 ${data.name} just joined PetVerse!`);
+      break;
+    }
+
+    case 'post_liked': {
+      // Update like count on visible post cards
+      document.querySelectorAll('.post-card').forEach(card => {
+        const likeBtn = card.querySelector('.like-btn');
+        const likeCount = card.querySelector('.like-count');
+        if (likeBtn && likeCount && card.dataset.postId == data.postId) {
+          likeCount.textContent = data.likes;
+        }
+      });
+      break;
+    }
+  }
+}
+
+function showLiveBadge(message) {
+  const badge = document.createElement('div');
+  badge.className = 'live-badge';
+  badge.textContent = message;
+  document.body.appendChild(badge);
+  requestAnimationFrame(() => badge.classList.add('live-badge-show'));
+  setTimeout(() => {
+    badge.classList.remove('live-badge-show');
+    setTimeout(() => badge.remove(), 400);
+  }, 3500);
+}
+
 
 init();
