@@ -207,7 +207,6 @@
 
         <!-- Step 2: enter OTP -->
         <div id="registerStep2" style="display:none;">
-          <div id="regDevCode" class="dev-code-box" style="display:none;"></div>
           <p class="otp-sent-msg">✅ Code sent! Check your email and enter it below.</p>
           <input type="text" id="reg-otp" placeholder="Enter 6-digit code" class="form-input otp-input" maxlength="6" />
           <p class="form-error" id="otpError"></p>
@@ -241,7 +240,6 @@
 
       <div id="forgotStep2" style="display:none;">
         <p style="color:var(--muted);margin-bottom:16px;">Enter the code we sent and your new password.</p>
-        <div id="forgotDevCode" class="dev-code-box" style="display:none;"></div>
         <div class="join-form">
           <input type="text"     id="forgot-otp"     placeholder="6-digit reset code"         class="form-input otp-input" maxlength="6" />
           <input type="password" id="forgot-newpass" placeholder="New Password (min. 6 chars)" class="form-input" />

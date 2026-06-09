@@ -670,19 +670,12 @@ function setupRegisterForm() {
     sendOtpBtn.textContent = 'Sending...';
 
     try {
-      const data = await sendOTP({ email, type: 'register' });
+      await sendOTP({ email, type: 'register' });
       step1Data  = { name, email, password, petName, petType };
 
       document.getElementById('registerStep1').style.display = 'none';
       document.getElementById('registerStep2').style.display = 'block';
       document.getElementById('registerDesc').textContent    = 'Enter the code sent to your email';
-
-      // Show code in browser if email not configured
-      const devBox = document.getElementById('regDevCode');
-      if (data.devCode) {
-        devBox.style.display = 'block';
-        devBox.innerHTML = `📧 Email not set up yet. Your code is:<strong>${data.devCode}</strong>`;
-      }
     } catch (err) {
       errorEl.textContent = err.message;
     } finally {
@@ -695,12 +688,7 @@ function setupRegisterForm() {
     if (!step1Data.email) return;
     resendBtn.disabled = true;
     try {
-      const data = await sendOTP({ email: step1Data.email, type: 'register' });
-      if (data.devCode) {
-        const devBox = document.getElementById('regDevCode');
-        devBox.style.display = 'block';
-        devBox.innerHTML = `📧 New code:<strong>${data.devCode}</strong>`;
-      }
+      await sendOTP({ email: step1Data.email, type: 'register' });
       showToast('Code resent!');
     } catch {
       showToast('Could not resend. Try again.');
@@ -765,19 +753,12 @@ function setupForgotForm() {
     btn.textContent = 'Sending...';
 
     try {
-      const data = await sendOTP({ email, type: 'reset' });
+      await sendOTP({ email, type: 'reset' });
       resetEmail = email;
 
       document.getElementById('forgotStep1').style.display = 'none';
       document.getElementById('forgotStep2').style.display = 'block';
-
-      if (data.devCode) {
-        const devBox = document.getElementById('forgotDevCode');
-        devBox.style.display = 'block';
-        devBox.innerHTML = `📧 Email not set up. Your reset code:<strong>${data.devCode}</strong>`;
-      } else {
-        showToast('Reset code sent to your email!');
-      }
+      showToast('Reset code sent to your email!');
     } catch (err) {
       errorEl.textContent = err.message;
     } finally {

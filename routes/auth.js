@@ -42,11 +42,7 @@ router.post('/send-otp', async (req, res) => {
 
     await sendOTPEmail(email, code, type);
 
-    const emailConfigured = process.env.EMAIL_USER && !process.env.EMAIL_USER.includes('your_gmail');
-    const response = { message: 'Code sent! Check your email.' };
-    if (!emailConfigured) response.devCode = code;
-
-    res.json(response);
+    res.json({ message: 'Code sent! Check your email.' });
   } catch (err) {
     console.error('OTP error:', err.message);
     res.status(500).json({ error: 'Could not send the code. Check server logs.' });
