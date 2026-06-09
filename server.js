@@ -4,105 +4,28 @@
 
 require('dotenv').config();
 
-const express   = require('express');
-const mysql     = require('mysql2/promise');
-const bcrypt    = require('bcrypt');
-const nodemailer= require('nodemailer');
-const helmet    = require('helmet');
-const rateLimit = require('express-rate-limit');
-const cors      = require('cors');
-const path      = require('path');
+const express    = require('express');
+const mysql      = require('mysql2/promise');
+const bcrypt     = require('bcrypt');
+const nodemailer = require('nodemailer');
+const helmet     = require('helmet');
+const rateLimit  = require('express-rate-limit');
+const cors       = require('cors');
+const path       = require('path');
+const adminPanel = require('./admin-panel');
 
-const app        = express();
+const app         = express();
 const SALT_ROUNDS = 10;
 
 // ===== SECURITY MIDDLEWARE =====
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname)));
-app.use('/images', express.static(path.join(__dirname, 'images'))); // explicit images route
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.get('/favicon.ico', (req, res) => res.status(204).end());
-
-// ===== SIMPLE DATABASE VIEWER =====
-// Open http://localhost:4000/admin to view the database
-app.get('/admin', async (req, res) => {
-  try {
-    const [tables] = await pool.query('SHOW TABLES');
-    const dbName   = process.env.DB_NAME || 'petverse';
-    const key      = `Tables_in_${dbName}`;
-    const tableNames = tables.map(t => t[key]);
-
-    const links = tableNames.map(t =>
-      `<a href="/admin/${t}" style="display:inline-block;margin:6px 8px;padding:10px 22px;background:#7C3AED;color:white;border-radius:50px;text-decoration:none;font-weight:700;font-size:15px;">${t}</a>`
-    ).join('');
-
-    res.send(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>PetVerse DB</title>
-<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:system-ui,sans-serif;background:#F5F3FF;min-height:100vh;}
-.top{background:white;padding:20px 32px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:12px;}
-.top h1{font-size:22px;font-weight:900;color:#7C3AED;}
-.wrap{max-width:900px;margin:40px auto;padding:0 20px;}
-.tables{background:white;border-radius:16px;padding:28px;box-shadow:0 4px 24px rgba(124,58,237,.08);}
-.tables h2{font-size:18px;font-weight:700;margin-bottom:18px;color:#374151;}
-</style></head>
-<body>
-<div class="top"><span style="font-size:28px;">🐾</span><h1>PetVerse Database Viewer</h1></div>
-<div class="wrap">
-  <div class="tables">
-    <h2>Tables (${tableNames.length})</h2>
-    <div>${links}</div>
-  </div>
-</div>
-</body></html>`);
-  } catch (err) {
-    res.send(`<pre>Error: ${err.message}</pre>`);
-  }
-});
-
-app.get('/admin/:table', async (req, res) => {
-  const table = req.params.table.replace(/[^a-zA-Z0-9_]/g, '');  // sanitize table name
-  try {
-    const [rows] = await pool.query(`SELECT * FROM \`${table}\` LIMIT 100`);
-    if (rows.length === 0) {
-      return res.send(`<p style="font-family:system-ui;padding:32px;">No records in <strong>${table}</strong>. <a href="/admin">← Back</a></p>`);
-    }
-
-    const cols = Object.keys(rows[0]);
-    const thead = cols.map(c => `<th>${c}</th>`).join('');
-    const tbody = rows.map(row =>
-      `<tr>${cols.map(c => `<td>${row[c] !== null ? String(row[c]).replace(/</g,'&lt;').substring(0, 80) : '<span style="color:#9CA3AF">null</span>'}</td>`).join('')}</tr>`
-    ).join('');
-
-    res.send(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>${table} — PetVerse DB</title>
-<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:system-ui,sans-serif;background:#F5F3FF;}
-.top{background:white;padding:16px 32px;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:16px;}
-.top a{color:#7C3AED;text-decoration:none;font-weight:700;}
-.top h1{font-size:20px;font-weight:900;color:#1F2937;}
-.wrap{max-width:100%;overflow-x:auto;padding:28px;}
-table{width:100%;border-collapse:collapse;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(124,58,237,.08);}
-th{background:#7C3AED;color:white;padding:12px 16px;text-align:left;font-size:13px;white-space:nowrap;}
-td{padding:10px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;color:#374151;white-space:nowrap;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:#F5F3FF;}
-.count{color:#6B7280;font-size:14px;padding:0 4px;}
-</style></head>
-<body>
-<div class="top">
-  <a href="/admin">← All Tables</a>
-  <h1>${table}</h1>
-  <span class="count">${rows.length} row${rows.length !== 1 ? 's' : ''}${rows.length === 100 ? ' (showing first 100)' : ''}</span>
-</div>
-<div class="wrap">
-  <table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>
-</div>
-</body></html>`);
-  } catch (err) {
-    res.send(`<pre style="padding:32px;font-family:system-ui;">Error: ${err.message}<br><a href="/admin">← Back</a></pre>`);
-  }
-});
 
 // Expose FB App ID to frontend
 app.get('/api/config', (req, res) => {
@@ -130,6 +53,11 @@ const pool = mysql.createPool({
   connectionLimit:    10,
   charset:            'utf8mb4'
 });
+
+// ===== PHPMYADMIN-STYLE ADMIN PANEL =====
+// Access at http://localhost:4000/phpmyadmin/
+adminPanel.setPool(pool);
+app.use('/phpmyadmin', adminPanel.router);
 
 // ===== EMAIL SETUP =====
 const mailer = nodemailer.createTransport({
