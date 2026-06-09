@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS members (
   google_id     VARCHAR(100) DEFAULT NULL,
   pet_name      VARCHAR(100) NOT NULL,
   pet_type      ENUM('dog','cat','rabbit','bird','other') NOT NULL,
-  joined_at     DATETIME DEFAULT CURRENT_TIMESTAMP
+  joined_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_facebook_id (facebook_id),
+  INDEX idx_google_id   (google_id)
 );
 
 CREATE TABLE IF NOT EXISTS pets (
@@ -53,7 +55,8 @@ CREATE TABLE IF NOT EXISTS posts (
   content     TEXT         NOT NULL,
   likes       INT          DEFAULT 0,
   session_id  VARCHAR(64),
-  created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP
+  created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_created_at (created_at)
 );
 
 CREATE TABLE IF NOT EXISTS post_tags (
@@ -105,7 +108,8 @@ CREATE TABLE IF NOT EXISTS otps (
   code       VARCHAR(10)  NOT NULL,
   type       ENUM('register','reset','login') NOT NULL,
   expires_at DATETIME     NOT NULL,
-  used       TINYINT      DEFAULT 0
+  used       TINYINT      DEFAULT 0,
+  INDEX idx_email_type (email, type)
 );
 
 CREATE TABLE IF NOT EXISTS user_events (
